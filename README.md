@@ -24,9 +24,13 @@
 Install Python dependencies:
 ```bash
 pip install paramiko
+```
+---
 
 ## Usage
 ![image](https://github.com/user-attachments/assets/eccade12-c0d3-4d6b-a6d5-dba0632548b1)
+
+---
 
 ## Disclaimer
 
