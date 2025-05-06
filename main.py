@@ -132,6 +132,12 @@ print("\033[33mCopying contacts...\033[0m")
 rows = get_data(sftp, "/private/var/mobile/Library/AddressBook/AddressBook.sqlitedb", "SELECT p.first, p.last, p.CreationDate, p.ModificationDate, m.value AS phone_number FROM ABPerson p JOIN ABMultiValue m ON p.ROWID = m.record_id")
 print("\033[32mDone!\033[0m")
 
+print("\033[33mCopying call history...\033[0m")
+call_rows = get_data(sftp, "/private/var/mobile/Library/CallHistoryDB/CallHistory.storedata", "SELECT c.ZDATE, c.ZORIGINATED, c.ZANSWERED, c.ZCALLTYPE, c.ZDURATION, c.ZDISCONNECTED_CAUSE, h.ZNORMALIZEDVALUE FROM ZCALLRECORD c \
+                LEFT JOIN Z_2REMOTEPARTICIPANTHANDLES r ON c.Z_PK = r.Z_2REMOTEPARTICIPANTCALLS \
+                LEFT JOIN ZHANDLE h ON r.Z_3REMOTEPARTICIPANTHANDLES = h.Z_PK")
+print("\033[32mDone!\033[0m")
+
 print("\033[33mCopying cached message attachments...\033[0m")
 copy_with_progress(sftp, "/private/var/mobile/Library/SMS/Attachments", "Attachments")
 print(f"\033[32m{fit_in_line('Done!')}\033[0m")
@@ -250,13 +256,59 @@ for c in chats:
                     except:
                         pass
     os.chdir("..")
+os.chdir("..")
+
+print("\033[32mDone!\033[0m")
+
+print("\033[33mDumping call history...\033[0m")
+
+call_rows = sorted(call_rows, key=lambda x: x[0], reverse=True)
+with open("call_history.txt", "w") as f:
+    for row in call_rows:
+        date, originated, answered, typ, duration, disconnect, name, deleted = ios_date(row[0]), row[1], row[2], row[3], row[4], row[5], num_to_name.get(row[6], row[6]), row[7]
+
+        if deleted:
+            f.write("(DELETED) - ")
+
+        f.write("(" + date + ") ")
+        f.write("Outgoing " if originated else "Incoming ")
+
+        if typ == 1:
+            f.write("phone call ")
+        elif typ == 8:
+            f.write("FaceTime video ")
+        elif typ == 16:
+            f.write("FaceTime audio ")
+        else:
+            f.write("call ")
+
+        f.write("to " if originated else "from ")
+        f.write(name + " - ")
+        
+        if disconnect == 0:
+            f.write("Protagonist hung up - ")
+        elif disconnect == 2:
+            f.write("Protagonist declined - ")
+        elif disconnect == 6:
+            if not answered:
+                f.write("Protagonist did not pick up - ")
+            else:
+                f.write(name + " hung up - ")
+        else:
+            if not answered:
+                f.write("Failed for unknown reasons - ")
+            else:
+                f.write("Ended for unknown reasons - ")
+
+        f.write("Duration " + str(datetime.timedelta(seconds=int(duration))))
+        f.write("\n")
 
 print("\033[32mDone!\033[0m")
 
 print("\033[33mCleaning up...\033[0m")
-shutil.rmtree("../Attachments")
-os.chdir("..")
+shutil.rmtree("Attachments")
 os.remove("AddressBook.sqlitedb")
 os.remove("sms.db")
+os.remove("CallHistory.storedata")
 
 print("\033[32mDone!\033[0m")
