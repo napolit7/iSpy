@@ -9,7 +9,6 @@
 - Extracts data from key iOS paths (Messages, Contacts, Attachments, DCIM, etc.)
 - Recovers deleted SQLite entries (e.g., messages, contacts) by parsing database internals
 - Attempts recovery of deleted photos/videos via raw disk image analysis (planned)
-- Works on jailbroken iOS devices (tested with unc0ver on iOS 14.8)
 
 ---
 
